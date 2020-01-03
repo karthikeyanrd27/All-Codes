@@ -1,0 +1,21 @@
+Encryption with SSL : 
+
+* SSL can be configured for encryption or authentication. 
+* Independly we can choose a seperate machianicm for client authentication. SSL, SASL 
+* SSL - This is 2 way authentication.
+
+SSL uses Private/key certificate pair : 
+
+Each broker need its own private-key/certificate pair, client uses that certificate to authendicate the broker
+Each logical client needs to own private-key/certificate pair if client authentication enabled
+
+CA = Certificate Authority is reponsible for signinig certificate. = Passport authority 
+
+Key store - each machine identity 
+trust store - List of certificate that machine should trust
+
+To deploy SSL , ther general steps are : 
+1. Generate the Key/Certificate
+2. Generate your own certificate Authority(CA) 
+3. Sign the certificate
+

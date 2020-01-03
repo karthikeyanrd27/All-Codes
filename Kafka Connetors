@@ -1,0 +1,229 @@
+Kafka connector :
+
+Source connector and sink connector
+
+Kafka connector is a integral component of ETL data pipeling when combined with Kafka 
+Kafa connector is either standlaone process running in single machine or as distrubuted 
+this allows scale down during dev, testing and small prod depends upon the data volume 
+
+Benefits of kafka connector
+1. data centric pipeline - use meaningful data abstraction to pull or push data to Kafka 
+2. Flexibilty and scalabity - scale up and scale down options 
+3. Resuablity and extensibity 
+
+Installation and configuration Kafka connect : 
+
+Prerequisites : 
+
+- Set of brokers 
+- Internal topic creation - Required internel topic we required well ahead of time with 
+higher replication factor . compaction cleanup policy and correct number of partition . 
+this avoid recalibrating 
+- Shema registrty : this is not required for Kafa connect 
+
+
+Standalone Vs distrubuted: 
+- Can be implemented either standlaone od distrubuted
+- Single agent - standlaone well suits ex : sending logs from Web to Kafa
+- Single source but heavy data volumee ex : Kafa to HDFS distrubuted is well suits
+- Recommanded distrubuted mode for production 
+
+groups and bais
+Kafka connect concepts : 
+
+5 major concepts
+
+1. Connectors Define from where should be copied to and from 
+logical job - responsible for managing the copying of data from or to Kafka another system 
+
+2. Tasks: are the main actor in data model in connect . by allowing the connector break single
+jobs into many tasks. Kafka connect provides build in support for parallisum and scalable data
+copying with little configuration.
+config.storage.topic
+status.storage,topic - Tasks will be stored . 
+
+Tasks rebalancing - failed tasks are not automatically restarted and should be restarted through REST API 
+
+3. Workers : Connector and tasks are the logical unit and should be schduled to execute in a progress . 
+Workers - 2 types. 1. Standalone 2. Distrubuted  workers . 
+
+standlaone workers - Opt for dev, only one process source to Kafa, dis adv : no fault tolernce . 
+distrubuted workers - provides scalabity and fault tolernce for Kafa connect. All the workers will be same
+group.id 
+
+4. Convertors  - perticular data format when we writing into or reading from Kafa.
+AvroConvertor, JsonConvertor, StringConverotr, ByteArrayConvertor . Convertors are decoupled 
+
+5.Transforms  - we can make simple and lightweight modification to indivural message. 
+
+
+Deployment Consideration : 
+
+- Kafa connector can be deployed in many ways - Kubernets, Mesos, Docker swarm or Yarn 
+
+
+Installing and Configuring Kafka Connect:
+
+Planning a Kafka Connect installation
+Running workers in standalone and distributed modes
+Installing connector plugins
+Configuring workers
+
+Planning a Kafka Connect installation: 
+
+1. Internal topic creation - High replication factor, compaction cleanup policy , correct number of partition
+2. schema registrty - this is not required for kafka connect but we should have min/std data flexiable format - schema compatibilty 
+3. standalone or distributed: 
+standalone - well suits when single agents sending logs from webserver to Kafka 
+distributed - heavy volume from source suits . recommand : in prod 
+
+4. Deployment consideration : 
+deployed in many ways : Kubernets, Mesos, Docker swarm, Yarn
+5.Installing plugins: 
+Kafka connect is extensible , so that developer can create own custom plugins to handle connector
+transformas or convertor with use of min of effort
+Kafka connect plugins basically set of JAR 
+kafka connect plugins from one another libraries will not affect other libraries
+plugins may be in UBER JAR OR dirtory 
+Uber Jar - containing all the classfiles for the plugins and third party dependcies in single JAR
+dirtory - JAR files for the plugins and third party dependcies
+
+** Plugin should never contain any libraries that are provied by kafka connector's run time 
+kafka connect finds plugins path n plugins path 
+/usr/local/share/kafka/plugins
+
+earlier version of Kafka we should use diff approach 
+CLASSPATH  - Disadv - conflicts so new plugin path method is workaround 
+
+Running Workers: 
+
+standalone Mode :
+
+bin/connect-standalone worker.properties connector1.properties [connector2.properties connector3.properties ...]
+
+first worker.properties followed connector.properties
+
+connetor config:
+
+name=local-file-sink
+connector.class=FileStreamSinkConnector
+tasks.max=1
+file=test.sink.txt
+topics=connect-test
+
+if we run multiple standalone instance on the same host we should unique 
+offset.storage.file.filename
+rest.port
+
+Distributed Mode
+# config.storage.topic=connect-configs
+  bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-configs --replication-factor 3 --partitions 1 --config cleanup.policy=compact
+
+# offset.storage.topic=connect-offsets
+  bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-offsets --replication-factor 3 --partitions 50 --config cleanup.policy=compact
+
+
+# status.storage.topic=connect-status
+  bin/kafka-topics --create --zookeeper localhost:2181 --topic connect-status --replication-factor 3 --partitions 10 --config cleanup.policy=compact
+
+
+Configuring Workers: 
+
+Kafka connect configured based on Property file 
+
+Common Workers config: 
+
+- bookstrap.servers 
+- Key.converters  - controls the format of the message . Popular format JSON or Avro 
+- Value.converters - same
+- rest.host.name
+- rest.port
+- plugin.path
+Standalone Worker Configuration
+- offset.storage.file.name - store connector offset in 
+
+Distributed Worker Configuration
+
+- group-id values each other and from cluster 
+- 3 topics are main - all workers in cluster should have access for those topics 
+    - connector config 
+	- offset data 
+	- status update 
+config.storage .topics
+offset.storage.topic
+status.storage.topic
+
+- group-id
+- config.storage.topic
+- config.storage.replication.factor - always 3 is recommanded 
+- status.storage.replication.factor - always 3 is recommanded
+
+Configuring Converters
+
+AvroConvertor
+JsonConvertor
+StringConverotr
+ByteArrayConvertor
+
+
+Connector Developer Guide
+
+SourceConnector - JDBC Connector 
+SinkConnectore - Kafka to HDFS 
+
+Connector do not perform any data copying . their config only job will be split into tasks
+task - source task and sink task 
+
+Partition and records : 
+
+each partition is an ordered sequence of key-value records 
+
+
+
+Kafka Connect Concepts
+
+Connector in Kafka connect define where data should be copied to or from 
+2 component : Connector instance and connector plugin
+connector instance : is responsible for copying the data between kafka and another system 
+connectore plugin : All of the classes or used by a connector are defined in  connector plugin 
+
+Tasks: 
+
+tasks are the main actor in the data model for connect 
+each connector instance co-ordinate set of tasks
+connectore breaks the jobs into multiple smal jobs 
+state stored in config.storage.topic status.storage.topics
+
+task re-blanacing : 
+
+Task re-balancing when connectore increase/decrease the number of tasks they required the connectors config should be changed 
+Re-start should not 
+
+
+workers: 
+
+logical units of work and must be schduled to execute in a process.
+
+Types : Standalone vs Distributed mode 
+
+standalone : single process/min config /convient for during dev /limited functionality /scalability is limited to the single process and there is no fault tolerance beyond any monitoring you add to the single process
+
+distributed : group-id 
+
+convertor:
+
+Tasks use converters to change the format of data from bytes to Connect internal data format and vice versa
+
+AvroConverter
+JsonConverter
+StringConverter
+ByteArrayConverter
+
+
+
+
+
+
+
+
+ 
