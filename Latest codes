@@ -1,0 +1,476 @@
+df.writeStream \
+   .option("path","/user/bdpda/pda/coxstream/tgt19") \
+   .format("com.databricks.spark.avro") \
+   .option("checkpointLocation","/user/bdpda/pda/coxstream/chk19") \
+   .start()
+
+
+1. How to check the HDFS file is binary or text : 
+ hdfs dfs -cat /file/on/hdfs | head -15 > tmp ; file -i tmp ; rm tmp
+
+
+from pyspark.sql.types import *
+from pyspark.sql import SQLContext
+from pyspark import SparkContext
+sc = SparkContext()
+sqlContext = SQLContext(sc)
+sqlContext.setConf("spark.sql.avro.compression.codec","snappy") 
+
+df = sqlContext.read.format("com.databricks.spark.avro").load("/user/bdpda/pda/coxstream/tgt20/part-00002-d6f523d5-b678-4886-aee1-cc38e085d61d.avro")
+
+/usr/hdp/2.6.1.0-129/spark2/bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.0,com.databricks:spark-avro_2.11:3.2.0  --conf spark.ui.port=4055 
+
+1. Sangeetha 
+2. Papa akak 
+3. akka 
+4. Samuthayam 
+5. Malar akak 
+6. ravi 
+7. Sekar 
+8. Eniyam 
+9. Siva 
+10.Shanmugam 
+11.Vijay 
+12. Anton 
+13.Kavi 
+14. Balaji 
+15. Lax
+16. Sathis
+
+
+/usr/hdp/current/kafka-broker/bin/kafka-topics.sh --zookeeper dvtcbddd3001.corp.cox.com:2181 --list --secuirity-protocol SASL_SSL
+
+
+export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bdpda/spark_jaas"
+/usr/hdp/current/kafka-broker/bin/kafka-topics.sh --zookeeper dvtcbddd3001.corp.cox.com:2181 --list
+
+/usr/hdp/current/kafka-broker/bin/kafka-topics.sh --create \
+    --zookeeper dvtcbddd3001.corp.cox.com:2181 --replication-factor 1 --partitions 1 \
+    --topic topic_avrokv_test
+
+
+
+/usr/hdp/current/kafka-broker/bin/kafka-avro-console-producer.sh\
+    --broker-list dvtcbddd3001.corp.cox.com:9093 \
+    --topic topic_avrokv_test \
+    --property parse.key=true --property key.schema='{"type" : "int", "name" : "id"}' \
+    --property value.schema='{ "type" : "record", "name" : "example_schema", "namespace" : "com.example", "fields" : [ { "name" : "cust_id", "type" : "int", "doc" : "Id of the customer account" }, { "name" : "year", "type" : "int", "doc" : "year of expense" }, { "name" : "expenses", "type" : {"type": "array", "items": "float"}, "doc" : "Expenses for the year" } ], "doc:" : "A basic schema for storing messages" }'
+	
+Avro messgae no file found . 
+
+
+
+
+JSON Process : 
+
+export KAFKA_OPTS="-Djava.security.auth.login.config=/home/bdpda/spark_jaas"
+
+/usr/hdp/current/kafka-broker/bin/kafka-topics.sh --create \
+    --zookeeper dvtcbddd3001.corp.cox.com:2181 --replication-factor 1 --partitions 1 \
+    --topic topic_json_gpkafka
+
+/usr/hdp/current/kafka-broker/bin/kafka-console-producer.sh \
+    --broker-list dvtcbddd3001.corp.cox.com:9093 \
+    --topic topic_json_gpkafka 
+	--producer.config spark_jaas < sample_data.json
+/usr/hdp/current/kafka-broker/bin/kafka-console-producer.sh \
+    --broker-list dvtcbddd3001.corp.cox.com:9093 \
+    --topic topic_json_gpkafka 
+	--producer.config /home/bdpda/client.properties < sample_data.json
+	
+	
+CREATE TABLE ims_avro_json
+(
+    id string,
+    dbname string,
+    mon_ela_time_ms string,
+	mon_err_code string,
+	maint_reason string,
+	host_name string
+)
+ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+STORED AS TEXTFILE
+LOCATION '/user/bdpda/pda/coxstream/0112/';
+
+CREATE TABLE ims_avro_json
+(
+    id string,
+    dbname string,
+    mon_ela_time_ms string,
+	mon_err_code string,
+	maint_reason string,
+	host_name string
+)
+ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+STORED AS TEXTFILE
+LOCATION '/user/bdpda/pda/coxstream/0112/';
+	
+	
+
+
+In pysparkstuc
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from pyspark.streaming import StreamingContext
+import time
+
+
+spark = SparkSession.builder.appName('PythonStreamingDirectKafkaWordCount').getOrCreate()
+sc = spark.sparkContext
+ssc = StreamingContext(sc, 20)
+
+KAFKA_TOPIC_NAME_CONS = "inst_monitor_status_test"
+KAFKA_OUTPUT_TOPIC_NAME_CONS = "inst_monitor_status_to_hdfs"
+KAFKA_BOOTSTRAP_SERVERS_CONS = 'dvtcbddd3001.corp.cox.com:9093'
+
+df = spark.readStream \
+     .format("kafka") \
+     .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS_CONS) \
+     .option("subscribe", KAFKA_TOPIC_NAME_CONS) \
+     .option("startingOffsets", "earliest") \
+                .option("kafka.security.protocol","SASL_SSL")\
+                .option("kafka.client.id" ,"MCI-CIL")\
+                .option("kafka.sasl.kerberos.service.name","kafka")\
+     .option("kafka.ssl.truststore.location", "/home/bdpda/pda/kafka_trust.jks") \
+     .option("kafka.ssl.truststore.password", "changeit") \
+                .option("kaflka.sasl.kerberos.keytab","/home/bdpda/bdpda.headless.keytab") \
+                .option("kafka.sasl.kerberos.principal","bdpda") \
+     .load()
+
+df1 = df.selectExpr( "CAST(value AS STRING)")
+
+qry = df.writeStream.outputMode("append").format("console").start()
+
+
+query = df1.writeStream.option("path","/user/bdpda/pda/coxstream/tgt1").format("csv") .option("checkpointLocation", " /user/bdpda/pda/coxstream/chk1") .outputMode("append").start()
+
+ 
+ df1.saveAsTextFile ("hdfs://dvtcbddc101.corp.cox.com/10.220.3.167/user/bdpda/pda/coxstream/tgt")
+df1.writeStream.format("parquet").option("path","hdfs://user/bdpda/pda/coxstream/tgt").start()
+
+d
+/usr/hdp/2.6.1.0-129/spark2/bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.0 --conf spark.ui.port=4055 --files /home/bdpda/spark_jaas,/home/bdpda/bdpda.headless.keytab --conf "spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" --conf "spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas"
+
+/usr/hdp/2.6.1.0-129/spark2/bin/spark-submit --files /home/bdpda/spark_jaas,/home/bdpda/bdpda.headless.keytab --conf "spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" --conf "spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas
+
+:wq!
+
+This error indicates that jaas configuration is not visible to your kafka producer. To solve this issue, you either need to include
+
+/usr/hdp/2.6.1.0-129/spark2/bin/spark-submit --master yarn  --num-executors 7 --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.0 --conf spark.ui.port=4055 --files /home/bdpda/spark_jaas,/home/bdpda/bdpda.headless.keytab --conf "spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" --conf "spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" pysparkstructurestreaming.py  
+
+
+/usr/hdp/2.6.1.0-129/spark2/bin/spark-submit --packages com.databricks:spark-avro_2.11:3.2.0,org.apache.spark:spark-avro_2.11:2.4.0,org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.0 --conf spark.ui.port=4055 --files /home/bdpda/spark_jaas,/home/bdpda/bdpda.headless.keytab --conf "spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" --conf "spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" pysparkstructurestreaming.py
+
+
+if we 2 version , we can call out major version by using export command 
+
+
+env variable is not being set in your 
+
+/usr/hdp/2.6.1.0-129/spark2/bin/pyspark --packages org.apache.spark:spark-avro_2.11:2.4.3 --conf spark.ui.port=4064
+
+/usr/hdp/2.6.1.0-129/spark2/bin/pyspark --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.2.0 --conf spark.ui.port=4055 --files /home/bdpda/spark_jaas,/home/bdpda/bdpda.headless.keytab --conf "spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" --conf "spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/home/bdpda/spark_jaas" pysparkstructurestreaming.py  
+
+tail -100 /home/bdpda/ims_file.csv | /usr/hdp/current/kafka-broker/bin/kafka-console-producer.sh --broker-list dvtcbddd3001.corp.cox.com:9093  --topic inst_monitor_status_test --security-protocol SASL_SSL
+
+org.apache.kafka.common.security.JaasUtils.jaasConfig(JaasUtils.java:47)
+        at org.apache.kafka.common.security.kerberos.KerberosLogin.getServiceName(KerberosLogin.java:297)
+        at org.apache.kafka.common.security.kerberos.KerberosLogin.configure(KerberosLogin.java:103)
+        at org.apache.kafka.common.security.authenticator.LoginManager.<init>(LoginManager.java:45)
+        at org.apache.kafka.common.security.authenticator.LoginManager.acquireLoginManager(LoginManager.java:68)
+        at org.apache.kafka.common.network.SaslChannelBuilder.configure(SaslChannelBuilder.java:78)
+        ... 27 more
+                                
+                                
+                                KafkaClient {
+com.sun.security.auth.module.Krb5LoginModule required
+doNotPrompt=true
+useTicketCache=true
+principal="bdpda" ##<--Change this to your Principal
+useKeyTab=true
+serviceName="kafka"
+keyTab="bdpda.headless.keytab" ##<- Update this with the location of your keytab file
+client=true
+};
+
+
+KafkaClient {
+     com.sun.security.auth.module.Krb5LoginModule required
+     useKeyTab=true
+     keyTab="bdpda.headless.keytab"
+     storeKey=true
+     useTicketCache=false
+     serviceName="kafka"
+     principal="bdpda";
+    };
+
+
+
+.add("top_2_sql_opname",StringType())\
+.add("top_2_sql_activity_pct",StringType())\
+.add("top_3_sql_id",StringType())\
+.add("top_3_sql_use",StringType())\
+.add("top_3_sql_opname",StringType())\
+.add("top_3_sql_activity_pct",StringType())\
+.add("top_4_sql_id",StringType())\
+.add("top_4_sql_use",StringType())\
+.add("top_4_sql_opname",StringType())\
+.add("top_4_sql_activity_pct",StringType())\
+.add("top_5_sql_id",StringType())\
+.add("top_5_sql_use",StringType())\
+.add("top_5_sql_opname",StringType())\
+.add("top_5_sql_activity_pct",StringType())\
+.add("blocked_sessions_count",StringType())\
+.add("blocking_sessions_count ",StringType())
+
+Error messahe : 
+Caused by: org.apache.kafka.clients.consumer.OffsetOutOfRangeException: Offsets out of range with no configured reset policy for partitions: {inst_monitor_status-1=5163798}
+
+ .option("failOnDataLoss" ,"false")\
+
+
+/user/bdpda/pda/coxstream/tgt22/part-00002-fc0ea5c1-0b2f-4b9a-a473-34298f1a8dae.csv
+
+def json_formatted(s):
+    return json.dumps(json.loads(s))
+
+a = "{\"table\":\"DB_MONITOR.INST_MONITOR_STATUS\",\"op_type\":\"I\",\"op_ts\":\"2019-12-03 15:58:20.074135\",\"current_ts\":\"2019-12-03T15:58:29.274000\",\"pos\":\"00000000050146026217\",\"after\":{\"ID\":1013750897,\"INST_NAME\":\"TMICROST1\",\"DB_UNIQUE_NAME\":\"TMICROST\",\"DBNAME\":\"TMICROST\",\"MON_START_TIME\":\"2019-12-03 15:57:52.501669000\",\"MON_END_TIME\":\"2019-12-03 15:57:52.833665000\",\"MON_ELA_TIME_MS\":331.996,\"MON_ELA_TIME_SEC\":0.331996,\"MON_RESULT_CODE\":0,\"MON_ERR_CODE\":null,\"MON_RESULT_MSG\":null,\"MAINT_CODE\":null,\"MAINT_REASON\":null,\"INST_ID\":1,\"DBID\":1728441564,\"HOST_NAME\":\"dukeortd95.corp.cox.com\",\"VERSION\":\"11.2.0.2.0\",\"STARTUP_TIME\":\"2018-04-20 02:12:10\",\"STATUS\":\"OPEN\",\"CLUSTERED\":\"YES\",\"ARCHIVER\":\"STARTED\",\"DB_STATUS\":\"ACTIVE\",\"DATABASE_ROLE\":\"PRIMARY\",\"CREATED\":\"2015-11-16 11:26:20\",\"LOG_MODE\":\"ARCHIVELOG\",\"PROTECTION_MODE\":\"MAXIMUM PERFORMANCE\",\"PLATFORM_NAME\":\"Linux x86 64-bit\",\"MAX_PROCESS\":1000,\"CURR_PROCESS\":58,\"MAX_SESSIONS\":1536,\"CURR_SESSIONS\":54,\"CURR_ACTIVE_CNT\":53,\"MAX_PARALLEL\":640,\"PARALLEL_IN_USE\":0,\"PARALLEL_SERVERS_TARGET\":256,\"AUTO_DOP\":\"MANUAL\",\"SQL_QUEUED\":0,\"SQL_SERIALIZED\":0,\"SQL_DOWNGRADED\":0,\"HOST_CPU_USED_PCT\":86.5,\"HOST_CPU_LOAD\":168.2,\"IOPS\":3.24,\"IO_MBPS\":0.05,\"IO_WAIT_TIME_MS\":0,\"TNS_ALIAS\":\"TMICROST1\",\"STALE_SESSIONS_OT_4HRS\":1,\"STALE_SESSIONS_OT_24HRS\":0,\"FLASHBACK_ON\":\"NO\",\"SGA_USED_MB\":18169,\"SGA_USED_PCT\":94,\"PGA_USED_MB\":335,\"PGA_USED_PCT\":8.66,\"CDB\":\"NO\",\"USER_TXNS_PER_SEC\":0,\"USER_CALLS_PER_SEC\":0,\"USER_CALLS_PER_TXN\":0,\"PDB_NAME\":\"NONE\",\"SQL_RESPONSE_TIME_MS\":0.16,\"TOP_1_SQL_ID\":\"7a1vucpuh5qmt\",\"TOP_1_SQL_USER\":\"DMETRICS_ADMIN\",\"TOP_1_SQL_OPNAME\":\"SELECT\",\"TOP_1_SQL_ACTIVITY_PCT\":100,\"TOP_2_SQL_ID\":\"NONE\",\"TOP_2_SQL_USER\":\"NONE\",\"TOP_2_SQL_OPNAME\":\"NONE\",\"TOP_2_SQL_ACTIVITY_PCT\":0,\"TOP_3_SQL_ID\":\"NONE\",\"TOP_3_SQL_USER\":\"NONE\",\"TOP_3_SQL_OPNAME\":\"NONE\",\"TOP_3_SQL_ACTIVITY_PCT\":0,\"TOP_4_SQL_ID\":\"NONE\",\"TOP_4_SQL_USER\":\"NONE\",\"TOP_4_SQL_OPNAME\":\"NONE\",\"TOP_4_SQL_ACTIVITY_PCT\":0,\"TOP_5_SQL_ID\":\"NONE\",\"TOP_5_SQL_USER\":\"NONE\",\"TOP_5_SQL_OPNAME\":\"NONE\",\"TOP_5_SQL_ACTIVITY_PCT\":0,\"BLOCKED_SESSIONS_COUNT\":0,\"BLOCKING_SESSIONS_COUNT\":0}}"
+
+b = json.dumps(json.loads(a))
+ import json
+ c = json.loads(b)
+c = json.dumps(c)
+d = c['after']
+ 
+ 
+ n [11]: d = {"response": {"body": {"contact": {"email": "mr@abc.com", "mobile_number": "0123456789"}, "personal": {"last_name": "Muster", "gender": "m", "first_name": "Max", "dob": "1985-12-23", "family_status": "single", "title": "Dr."}, "customer": {"verified": "true", "customer_id": "1234567"}}, "token": "dsfgf", "version": "1.1"}}
+
+In [12]: df = pd.io.json.json_normalize(b)
+
+In [13]: df.columns = df.columns.map(lambda x: x.split(".")[-1])
+
+In [14]: df
+Out[14]:
+        email mobile_number customer_id verified         dob family_status first_name gender last_name title  token version
+0  mr@abc.com    0123456789     1234567     true  1985-12-23        single        Max      m    Muster   Dr.  dsfgf     1.1
+
+df = pd.DataFrame.from_dict(json_str['after'])
+all_results = json['after'][0]
+
+
+{ 
+   "after":{ 
+      "TOP_4_SQL_USER":"NONE",
+      "TOP_1_SQL_USER":"DMETRICS_ADMIN",
+      "HOST_CPU_LOAD":168.2,
+      "BLOCKED_SESSIONS_COUNT":0,
+      "LOG_MODE":"ARCHIVELOG",
+      "MAINT_CODE":null,
+      "SQL_QUEUED":0,
+      "MON_ELA_TIME_MS":331.996,
+      "TOP_5_SQL_ID":"NONE",
+      "PARALLEL_IN_USE":0,
+      "INST_ID":1,
+      "MAX_PARALLEL":640,
+      "MON_RESULT_MSG":null,
+      "IO_WAIT_TIME_MS":0,
+      "TOP_3_SQL_USER":"NONE",
+      "STALE_SESSIONS_OT_4HRS":1,
+      "DB_UNIQUE_NAME":"TMICROST",
+      "TOP_3_SQL_OPNAME":"NONE",
+      "IO_MBPS":0.05,
+      "TOP_2_SQL_ACTIVITY_PCT":0,
+      "DBNAME":"TMICROST",
+      "TOP_1_SQL_OPNAME":"SELECT",
+      "SQL_DOWNGRADED":0,
+      "TOP_4_SQL_ID":"NONE",
+      "DATABASE_ROLE":"PRIMARY",
+      "DBID":1728441564,
+      "MAINT_REASON":null,
+      "TNS_ALIAS":"TMICROST1",
+      "SGA_USED_PCT":94,
+      "PLATFORM_NAME":"Linux x86 64-bit",
+      "MAX_SESSIONS":1536,
+      "INST_NAME":"TMICROST1",
+      "HOST_NAME":"dukeortd95.corp.cox.com",
+      "MON_ELA_TIME_SEC":0.331996,
+      "TOP_2_SQL_ID":"NONE",
+      "ARCHIVER":"STARTED",
+      "DB_STATUS":"ACTIVE",
+      "PARALLEL_SERVERS_TARGET":256,
+      "TOP_5_SQL_ACTIVITY_PCT":0,
+      "SGA_USED_MB":18169,
+      "PGA_USED_MB":335,
+      "STATUS":"OPEN",
+      "TOP_4_SQL_ACTIVITY_PCT":0,
+      "MAX_PROCESS":1000,
+      "SQL_RESPONSE_TIME_MS":0.16,
+      "MON_ERR_CODE":null,
+      "CREATED":"2015-11-16 11:26:20",
+      "CURR_PROCESS":58,
+      "MON_START_TIME":"2019-12-03 15:57:52.501669000",
+      "TOP_3_SQL_ID":"NONE",
+      "PDB_NAME":"NONE",
+      "PGA_USED_PCT":8.66,
+      "TOP_5_SQL_USER":"NONE",
+      "TOP_2_SQL_OPNAME":"NONE",
+      "VERSION":"11.2.0.2.0",
+      "FLASHBACK_ON":"NO",
+      "CURR_ACTIVE_CNT":53,
+      "TOP_1_SQL_ID":"7a1vucpuh5qmt",
+      "USER_CALLS_PER_TXN":0,
+      "ID":1013750897,
+      "PROTECTION_MODE":"MAXIMUM PERFORMANCE",
+      "BLOCKING_SESSIONS_COUNT":0,
+      "MON_RESULT_CODE":0,
+      "TOP_1_SQL_ACTIVITY_PCT":100,
+      "STALE_SESSIONS_OT_24HRS":0,
+      "STARTUP_TIME":"2018-04-20 02:12:10",
+      "CDB":"NO",
+      "TOP_5_SQL_OPNAME":"NONE",
+      "TOP_4_SQL_OPNAME":"NONE",
+      "HOST_CPU_USED_PCT":86.5,
+      "SQL_SERIALIZED":0,
+      "CURR_SESSIONS":54,
+      "IOPS":3.24,
+      "MON_END_TIME":"2019-12-03 15:57:52.833665000",
+      "TOP_2_SQL_USER":"NONE",
+      "CLUSTERED":"YES",
+      "AUTO_DOP":"MANUAL",
+      "USER_CALLS_PER_SEC":0,
+      "USER_TXNS_PER_SEC":0,
+      "TOP_3_SQL_ACTIVITY_PCT":0
+   },
+   "pos":"00000000050146026217",
+   "op_ts":"2019-12-03 15:58:20.074135",
+   "op_type":"I",
+   "current_ts":"2019-12-03T15:58:29.274000",
+   "table":"DB_MONITOR.INST_MONITOR_STATUS"
+}
+
+df2 = df1.selectExpr(json.dumps(json.loads("value"))
+d1 = json.dumps(json.loads(a))
+
+e = json.loads(d1)
+f = e.get('after')
+g = pd.DataFrame(list(f.items()))
+s = pd.Series(f, name='DateValue')
+
+
+a = "{\"table\":\"DB_MONITOR.INST_MONITOR_STATUS\",\"op_type\":\"I\",\"op_ts\":\"2019-12-03 16:45:18.024775\",\"current_ts\":\"2019-12-03T16:45:28.249000\",\"pos\":\"00000000050154233095\",\"after\":{\"ID\":1013760301,\"INST_NAME\":\"DRTOC2\",\"DB_UNIQUE_NAME\":\"DRTOC\",\"DBNAME\":\"DRTOC\",\"MON_START_TIME\":\"2019-12-03 16:45:14.334683000\",\"MON_END_TIME\":\"2019-12-03 16:45:18.740957000\",\"MON_ELA_TIME_MS\":4406.274,\"MON_ELA_TIME_SEC\":4.406274,\"MON_RESULT_CODE\":1,\"MON_ERR_CODE\":\"ORA-12541\",\"MON_RESULT_MSG\":\"ORA-12541: TNS:no listener\",\"MAINT_CODE\":null,\"MAINT_REASON\":null,\"INST_ID\":null,\"DBID\":null,\"HOST_NAME\":null,\"VERSION\":null,\"STARTUP_TIME\":null,\"STATUS\":null,\"CLUSTERED\":null,\"ARCHIVER\":null,\"DB_STATUS\":null,\"DATABASE_ROLE\":null,\"CREATED\":null,\"LOG_MODE\":null,\"PROTECTION_MODE\":null,\"PLATFORM_NAME\":null,\"MAX_PROCESS\":null,\"CURR_PROCESS\":null,\"MAX_SESSIONS\":null,\"CURR_SESSIONS\":null,\"CURR_ACTIVE_CNT\":null,\"MAX_PARALLEL\":null,\"PARALLEL_IN_USE\":null,\"PARALLEL_SERVERS_TARGET\":null,\"AUTO_DOP\":null,\"SQL_QUEUED\":null,\"SQL_SERIALIZED\":null,\"SQL_DOWNGRADED\":null,\"HOST_CPU_USED_PCT\":null,\"HOST_CPU_LOAD\":null,\"IOPS\":null,\"IO_MBPS\":null,\"IO_WAIT_TIME_MS\":null,\"TNS_ALIAS\":\"DRTOC2\",\"STALE_SESSIONS_OT_4HRS\":null,\"STALE_SESSIONS_OT_24HRS\":null,\"FLASHBACK_ON\":null,\"SGA_USED_MB\":null,\"SGA_USED_PCT\":null,\"PGA_USED_MB\":null,\"PGA_USED_PCT\":null,\"CDB\":\"NO\",\"USER_TXNS_PER_SEC\":null,\"USER_CALLS_PER_SEC\":null,\"USER_CALLS_PER_TXN\":null,\"PDB_NAME\":\"NONE\",\"SQL_RESPONSE_TIME_MS\":null,\"TOP_1_SQL_ID\":null,\"TOP_1_SQL_USER\":null,\"TOP_1_SQL_OPNAME\":null,\"TOP_1_SQL_ACTIVITY_PCT\":null,\"TOP_2_SQL_ID\":null,\"TOP_2_SQL_USER\":null,\"TOP_2_SQL_OPNAME\":null,\"TOP_2_SQL_ACTIVITY_PCT\":null,\"TOP_3_SQL_ID\":null,\"TOP_3_SQL_USER\":null,\"TOP_3_SQL_OPNAME\":null,\"TOP_3_SQL_ACTIVITY_PCT\":null,\"TOP_4_SQL_ID\":null,\"TOP_4_SQL_USER\":null,\"TOP_4_SQL_OPNAME\":null,\"TOP_4_SQL_ACTIVITY_PCT\":null,\"TOP_5_SQL_ID\":null,\"TOP_5_SQL_USER\":null,\"TOP_5_SQL_OPNAME\":null,\"TOP_5_SQL_ACTIVITY_PCT\":null,\"BLOCKED_SESSIONS_COUNT\":null,\"BLOCKING_SESSIONS_COUNT\":null}}"
+b  = json.dumps(json.loads(a))
+rddjson = sc.parallelize([b])
+df.select(F.explode(df.after).alias('results')).select('results.*').show(truncate=False)
+
+def json_formatted(s):
+    return json.dumps(json.loads(s))
+spark.udf.register("JsonformatterWithPython", json_formatted)
+
+
+from pyspark.sql.functions import udf
+from pyspark.sql.types import LongType
+squared_udf = udf(json_formatted)
+df1 = spark.table("test")
+df2 = df.select(squared_udf("value"))
+
+
+from pyspark.sql import Row
+
+jstr1 = u'{"header":{"id":12345,"foo":"bar"},"body":{"id":111000,"name":"foobar","sub_json":{"id":54321,"sub_sub_json":{"col1":20,"col2":"somethong"}}}}'
+jstr2 = u'{"header":{"id":12346,"foo":"baz"},"body":{"id":111002,"name":"barfoo","sub_json":{"id":23456,"sub_sub_json":{"col1":30,"col2":"something else"}}}}'
+jstr3 = u'{"header":{"id":43256,"foo":"foobaz"},"body":{"id":20192,"name":"bazbar","sub_json":{"id":39283,"sub_sub_json":{"col1":50,"col2":"another thing"}}}}'
+df = spark.createDataFrame([Row(json=jstr1),Row(json=jstr2),Row(json=jstr3)])
+
+new_df = spark.read.json(df1.rdd.map(lambda r: r.json))
+
+a = "{\"table\":\"DB_MONITOR.INST_MONITOR_STATUS\",\"op_type\":\"I\",\"op_ts\":\"2019-12-03 15:58:20.074135\",\"current_ts\":\"2019-12-03T15:58:29.274000\",\"pos\":\"00000000050146026217\",\"after\":{\"ID\":1013750897,\"INST_NAME\":\"TMICROST1\",\"DB_UNIQUE_NAME\":\"TMICROST\",\"DBNAME\":\"TMICROST\",\"MON_START_TIME\":\"2019-12-03 15:57:52.501669000\",\"MON_END_TIME\":\"2019-12-03 15:57:52.833665000\",\"MON_ELA_TIME_MS\":331.996,\"MON_ELA_TIME_SEC\":0.331996,\"MON_RESULT_CODE\":0,\"MON_ERR_CODE\":null,\"MON_RESULT_MSG\":null,\"MAINT_CODE\":null,\"MAINT_REASON\":null,\"INST_ID\":1,\"DBID\":1728441564,\"HOST_NAME\":\"dukeortd95.corp.cox.com\",\"VERSION\":\"11.2.0.2.0\",\"STARTUP_TIME\":\"2018-04-20 02:12:10\",\"STATUS\":\"OPEN\",\"CLUSTERED\":\"YES\",\"ARCHIVER\":\"STARTED\",\"DB_STATUS\":\"ACTIVE\",\"DATABASE_ROLE\":\"PRIMARY\",\"CREATED\":\"2015-11-16 11:26:20\",\"LOG_MODE\":\"ARCHIVELOG\",\"PROTECTION_MODE\":\"MAXIMUM PERFORMANCE\",\"PLATFORM_NAME\":\"Linux x86 64-bit\",\"MAX_PROCESS\":1000,\"CURR_PROCESS\":58,\"MAX_SESSIONS\":1536,\"CURR_SESSIONS\":54,\"CURR_ACTIVE_CNT\":53,\"MAX_PARALLEL\":640,\"PARALLEL_IN_USE\":0,\"PARALLEL_SERVERS_TARGET\":256,\"AUTO_DOP\":\"MANUAL\",\"SQL_QUEUED\":0,\"SQL_SERIALIZED\":0,\"SQL_DOWNGRADED\":0,\"HOST_CPU_USED_PCT\":86.5,\"HOST_CPU_LOAD\":168.2,\"IOPS\":3.24,\"IO_MBPS\":0.05,\"IO_WAIT_TIME_MS\":0,\"TNS_ALIAS\":\"TMICROST1\",\"STALE_SESSIONS_OT_4HRS\":1,\"STALE_SESSIONS_OT_24HRS\":0,\"FLASHBACK_ON\":\"NO\",\"SGA_USED_MB\":18169,\"SGA_USED_PCT\":94,\"PGA_USED_MB\":335,\"PGA_USED_PCT\":8.66,\"CDB\":\"NO\",\"USER_TXNS_PER_SEC\":0,\"USER_CALLS_PER_SEC\":0,\"USER_CALLS_PER_TXN\":0,\"PDB_NAME\":\"NONE\",\"SQL_RESPONSE_TIME_MS\":0.16,\"TOP_1_SQL_ID\":\"7a1vucpuh5qmt\",\"TOP_1_SQL_USER\":\"DMETRICS_ADMIN\",\"TOP_1_SQL_OPNAME\":\"SELECT\",\"TOP_1_SQL_ACTIVITY_PCT\":100,\"TOP_2_SQL_ID\":\"NONE\",\"TOP_2_SQL_USER\":\"NONE\",\"TOP_2_SQL_OPNAME\":\"NONE\",\"TOP_2_SQL_ACTIVITY_PCT\":0,\"TOP_3_SQL_ID\":\"NONE\",\"TOP_3_SQL_USER\":\"NONE\",\"TOP_3_SQL_OPNAME\":\"NONE\",\"TOP_3_SQL_ACTIVITY_PCT\":0,\"TOP_4_SQL_ID\":\"NONE\",\"TOP_4_SQL_USER\":\"NONE\",\"TOP_4_SQL_OPNAME\":\"NONE\",\"TOP_4_SQL_ACTIVITY_PCT\":0,\"TOP_5_SQL_ID\":\"NONE\",\"TOP_5_SQL_USER\":\"NONE\",\"TOP_5_SQL_OPNAME\":\"NONE\",\"TOP_5_SQL_ACTIVITY_PCT\":0,\"BLOCKED_SESSIONS_COUNT\":0,\"BLOCKING_SESSIONS_COUNT\":0}}"
+b = json.dumps(json.loads(a))
+df = spark.createDataFrame([Row(json=b)])
+new_df = spark.read.json(df.rdd.map(lambda r: r.json))
+
+
+from pyspark.sql.functions import from_json, col
+json_schema = spark.read.json(df1.rdd.map(lambda row: row.json)).schema
+df.withColumn('json', from_json(col('json'), json_schema))
+
+
+
+"{current_ts=2019-12-09T19:50:55.212000, pos=00000000090024437562, after={TOP_5_SQL_ACTIVITY_PCT=null, CDB=NO, STARTUP_TIME=null, TNS_ALIAS=Q1UKM3, PGA_USED_MB=null, IO_WAIT_TIME_MS=null, IO_MBPS=null, CURR_PROCESS=null, DBID=null, MAX_PROCESS=null, USER_TXNS_PER_SEC=null, IOPS=null, SQL_SERIALIZED=null, STATUS=null, DATABASE_ROLE=null, TOP_3_SQL_USER=null, ID=1015293631, INST_NAME=Q1UKM3, TOP_5_SQL_ID=null, TOP_4_SQL_ID=null, TOP_3_SQL_ID=null, TOP_2_SQL_ID=null, TOP_1_SQL_ID=null, CURR_ACTIVE_CNT=null, USER_CALLS_PER_TXN=null, PROTECTION_MODE=null, MON_RESULT_CODE=1, ARCHIVER=null, TOP_3_SQL_ACTIVITY_PCT=null, STALE_SESSIONS_OT_4HRS=null, TOP_1_SQL_USER=null, TOP_3_SQL_OPNAME=null, STALE_SESSIONS_OT_24HRS=null, MAX_SESSIONS=null, TOP_2_SQL_USER=null, LOG_MODE=null, TOP_2_SQL_OPNAME=null, PGA_USED_PCT=null, MAX_PARALLEL=null, MAINT_REASON=null, PLATFORM_NAME=null, DB_UNIQUE_NAME=Q1UKM, TOP_5_SQL_USER=null, INST_ID=null, MON_END_TIME=2019-12-09 18:31:28.846121000, TOP_1_SQL_OPNAME=null, SQL_DOWNGRADED=null, CREATED=null, USER_CALLS_PER_SEC=null, CURR_SESSIONS=null, TOP_1_SQL_ACTIVITY_PCT=null, HOST_NAME=null, MON_ELA_TIME_SEC=4.78258, MON_START_TIME=2019-12-09 18:31:24.063541000, PDB_NAME=NONE, DB_STATUS=null, TOP_2_SQL_ACTIVITY_PCT=null, DBNAME=Q1UKM, FLASHBACK_ON=null, TOP_4_SQL_OPNAME=null, SQL_QUEUED=null, TOP_4_SQL_USER=null, MON_ERR_CODE=ORA-12541, MON_ELA_TIME_MS=4782.58, PARALLEL_SERVERS_TARGET=null, PARALLEL_IN_USE=null, HOST_CPU_LOAD=null, HOST_CPU_USED_PCT=null, AUTO_DOP=null, CLUSTERED=null, TOP_5_SQL_OPNAME=null, SGA_USED_MB=null, SGA_USED_PCT=null, TOP_4_SQL_ACTIVITY_PCT=null, MAINT_CODE=null, SQL_RESPONSE_TIME_MS=null, BLOCKED_SESSIONS_COUNT=null, VERSION=null, MON_RESULT_MSG=ORA-12541: TNS:no listener, BLOCKING_SESSIONS_COUNT=null}, op_type=I, op_ts=2019-12-09 18:31:28.748109, table=DB_MONITOR.INST_MONITOR_STATUS}
+
+
+Minarva : 
+
+ ssh dukebdac101.corp.cox.com
+hdfs://HDPANALYTICSNN/source/pda/db_monitor/inst_monitor_status_test
+
+937101525,PBDREP,PBDREPDUKE2,PBDREP,2019-03-07 01:45:34.320716,2019-03-07 01:45:34.490213,169.497,0.169497,0,null,null,null,null,1,1630225428,dukeorpv13.corp.cox.com,12.1.0.2.0,2018-11-11 21:35:47.0,OPEN,NO,STARTED,ACTIVE,PHYSICAL STANDBY,2016-05-08 23:28:20.0,ARCHIVELOG,MAXIMUM PERFORMANCE,Linux x86 64-bit,2000,79,3024,60,48,20,0,16,MANUAL,0,0,0,2.87,0.28,206.17,2.24,0,PBDREPDUKE21,5,1,YES,4999,97.64,377,18.41,NO,0,19.55,295,NONE,5.98,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null
+937101525,PBDREP,PBDREPDUKE2,PBDREP,2019-03-07 01:45:34.320716,2019-03-07 01:45:34.490213,169.497,0.169497,0,null,null,null,null,1,1630225428,dukeorpv13.corp.cox.com,12.1.0.2.0,2018-11-11 21:35:47.0,OPEN,NO,STARTED,ACTIVE,PHYSICAL STANDBY,2016-05-08 23:28:20.0,ARCHIVELOG,MAXIMUM PERFORMANCE,Linux x86 64-bit,2000,79,3024,60,48,20,0,16,MANUAL,0,0,0,2.87,0.28,206.17,2.24,0,PBDREPDUKE21,5,1,YES,4999,97.64,377,18.41,NO,0,19.55,295,NONE,5.98,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null
+"1016410825, DPWX3, DPWX, DPWX, 2019-12-12 12:45:11.291602000, 2019-12-12 12:45:15.786553000, 4494.951, 4.494951, 1, ORA-12541, ORA-12541: TNS:no listener, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, DPWX3, None, None, None, None, None, None, None, NO, None, None, None, NONE, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None"
+
+had
+
+create external table test_table(
+
+current_ts string,
+pos string,
+MON_ELA_TIME_MS string
+
+
+CREATE TABLE table_name
+(current_ts string, pos STRING, MON_ELA_TIME_MS string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+
+  LOAD DATA inpath  '/user/bdpda/pda/coxstream/tgt24/part-00002-8271db20-5c1f-4cc5-ac69-7bde22ee89a4.csv' INTO TABLE table_name
+ LOAD DATA inpath 
+ 
+ hadoop fs -text *_fileName.txt | hadoop fs -put - targetFilename.txt
+ 
+ 
+ hdfs dfs -getMerge /user/bdpda/pda/coxstream/tgt26/*.csv /user/bdpda/pda/coxstream/tgt27
+ 
+ 
+ 
+ 1. Timestamp issue fix - Timestamp value is contain 'T' 
+ 2. Order of the message should be same in Minarva production target table
+ 3. Code migration activities - Need to work with Jenkin process
+ 
+Program Name
+Program Description
+New Program
+New Project
+Budget Code
+Business Point of contact
+Technology point of contact
+Data Sources
+Data Consumption pattern
+New firewall rules
+Tools leveraged 
+Service Account
+
+
+
+Project Name : 
+
+PLATFORM DATA ANALYTICS
+
+Detailed Description on this program : 
+
+Build near real-time ingestion pipeline which streaming the data from Kafka topic . 
+ 
+ /usr/hdp/current/kafka-broker/bin/kafka-console-consumer.sh --bootstrap-server dukebdpd3001.corp.cox.com:9093 --security-protocol SASL_SSL --topic inst_monitor_status consumer-property group.id=ims_rt --from-beginning
+ 
+ /usr/hdp/current/kafka-broker/bin/kafka-console-consumer.sh --bootstrap-server dukebdac101.corp.cox.com:9093 --security-protocol SASL_SSL --topic inst_monitor_status_test consumer-property group.id=ims_rt --from-beginning
+ 
+ /usr/hdp/current/kafka-broker/bin/kafka-console-consumer.sh --bootstrap-server dvtcbddd3001.corp.cox.com:9093 --security-protocol SASL_SSL --topic inst_monitor_status consumer-property group.id=ims_rt --from-beginning
+ 
+ 
+ EDGE NODE issue 
+ 
+ /home/bdpda/.ssh
+ 
+ ssh -o StrictHostKeyChecking=no <serviceName>
